@@ -1,0 +1,21 @@
+Descarte Imediato 
+
+
+-- Constantes --
+TP_NOT - Motivo: É uma constante (todos os dados são do tipo 2)
+ID_AGRAVP - Motivo: É uma constante (todos os dados têm o ID B659)
+
+--- Fluxo/Sistema ---
+DT_DIGITA - Motivo: Data de digitação da ficha não é importante
+DT_TRANSUS - Motivo: Há 98% de dados faltantes
+DT_TRANSDM - Motivo: Há 99% de dados faltantes
+DT_TRANSSM - Motivo: data de movimentação da notificação no nível municipal não é importante e há 64% de dados faltantes
+DT_TRANSRS - Motivo: Data em que a Regional de Saúde transmitiu os dados para o estado. Não é importante e há 99% de dados faltantes
+DT_TRANSSE - MNotivo: Data em que a Secretaria Estadual de Saúde transmitiu os dados para o Ministério da Saúde. Não é importante e há 99% de dados faltantes
+
+
+-- Texto Livre --
+NOPROPIN - Motivo: informa o nome da propriedade onde ocorreu se área rural mas há 85 de dados faltantes e texto livre é difícil de padronizar
+NOCOLINF - Motivo: informa o nome da coleção hídrica onde ocorreu a transmissão mas há 91% de dados faltantes e é texto livre
+DS_FORMA - Motivo: há 95% de dados faltantes 
+OUTRO_EX: Especifica qual é o outro tipo de exame mas é texto livre e tem 62% de dados faltantes. 

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.dist-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Env files
+.env
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Data (manter apenas o raw)
+data/*
+!data/sinan_esqu_raw.parquet
+
+# Logs
+*.log
