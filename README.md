@@ -6,7 +6,9 @@ Analise exploratoria e pipeline de preprocessamento de dados de esquistossomose,
 
 - `src/pipeline/`: pipeline modular de preprocessamento.
 - `src/pipeline/steps/`: etapas numeradas do pipeline.
+- `src/geo_enrich/`: enriquecimento geografico (nomes de municipio/UF e lat/long).
 - `notebooks/`: notebooks de AED e preprocessamento.
+- `notebooks/analise_geoespacial/`: notebooks de validacao e analise espacial.
 - `data/`: dados locais (somente `sinan_esqu_raw.parquet` deve ser versionado).
 - `data/processed/`: saidas locais do pipeline (nao versionar).
 - `anotacoes/`: dicionario de dados e notas.
@@ -30,7 +32,9 @@ Analise exploratoria e pipeline de preprocessamento de dados de esquistossomose,
 
 - Descarte imediato: regras baseadas em `anotacoes/descarte_imediato.txt` (sera formalizado no pipeline).
 - Nulos: mediana para numericos; moda para categoricos; remocao condicional de linhas criticas.
-- Feature engineering: idade, atrasos temporais, flags clinicas e datas derivadas (a definir na implementacao).
+- Feature engineering: idade, atrasos temporais e datas derivadas.
+- Outliers: filtro IQR conservador (1.5) para numericos e pos-features temporais.
+- Escolaridade: `CS_ESCOL_N` normalizada para 0-10 antes do mapeamento de ignorados.
 
 ## Como executar (pipeline)
 
@@ -122,13 +126,29 @@ PYTHONPATH=src python -m pipeline.run_pipeline \
 
 # manter colunas originais apos feature engineering
 PYTHONPATH=src python -m pipeline.run_pipeline --no-drop-after-features
+
+# gerar processado com DT_NOTIFIC
+PYTHONPATH=src python -m pipeline.run_pipeline \
+	--output data/processed/sinan_esq_processed_with_dt_notific.parquet
+```
+
+## Enriquecimento geografico (geo_enrich)
+
+Script: [src/geo_enrich/enrich_geo.py](src/geo_enrich/enrich_geo.py)
+
+Como rodar:
+```bash
+PYTHONPATH=src python -m geo_enrich.enrich_geo \
+	--input data/processed/sinan_esq_processed_with_dt_notific.parquet \
+	--output data/processed/sinan_esq_processed_with_dt_notific_geo.parquet
 ```
 
 ## Notebooks
 
-- `AED_Esquistossomose_Final.ipynb`: analise exploratoria final.
-- `eixo1_esqu.ipynb`: exploracoes do eixo 1.
-- `esqu_preprocess_FINAL.ipynb`: preprocessamento dos dados.
+- [notebooks/AED_Esquistossomose_Final.ipynb](notebooks/AED_Esquistossomose_Final.ipynb): analise exploratoria final.
+- [notebooks/esqu_preprocess_FINAL.ipynb](notebooks/esqu_preprocess_FINAL.ipynb): preprocessamento dos dados.
+- [notebooks/analise_geoespacial/EDA_esq_processed.ipynb](notebooks/analise_geoespacial/EDA_esq_processed.ipynb): EDA da base processada com DT_NOTIFIC.
+- [notebooks/analise_geoespacial/validacao_e_analise_temporal_basica](notebooks/analise_geoespacial/validacao_e_analise_temporal_basica): validacao e analise temporal basica.
 
 ## Documentacao
 
