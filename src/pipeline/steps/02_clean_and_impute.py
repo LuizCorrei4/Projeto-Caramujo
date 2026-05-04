@@ -20,6 +20,8 @@ class Step02Stats:
 	invalid_an_quant_count: int
 	numeric_imputed_values: int
 	categorical_imputed_values: int
+	outliers_removed: int
+	outlier_columns: Tuple[str, ...]
 
 
 def standardize_missing_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -43,6 +45,30 @@ def standardize_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 			.str.strip()
 			.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaT": pd.NA})
 		)
+	return df
+
+
+def normalize_cs_escol_n(df: pd.DataFrame) -> pd.DataFrame:
+	"""Normalize CS_ESCOL_N codes to 0-10 without leading zeros."""
+
+	if "CS_ESCOL_N" not in df.columns:
+		return df
+
+	df = df.copy()
+	s = (
+		df["CS_ESCOL_N"]
+		.astype("string")
+		.str.strip()
+		.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaT": pd.NA})
+		.str.replace(r"\.0+$", "", regex=True)
+	)
+
+	num = pd.to_numeric(s, errors="coerce")
+	num = num.where(num.notna() & (num % 1 == 0))
+	num = num.astype("Int64")
+	num = num.where(num.between(0, 10))
+
+	df["CS_ESCOL_N"] = num.astype("string")
 	return df
 
 
@@ -221,6 +247,45 @@ def impute_missing_values(df: pd.DataFrame, config: PipelineConfig) -> Tuple[pd.
 	return df, numeric_filled, categorical_filled
 
 
+def remove_outliers_iqr(df: pd.DataFrame, config: PipelineConfig) -> Tuple[pd.DataFrame, int, Tuple[str, ...]]:
+	"""Remove outliers using a conservative IQR rule.
+
+	Method: keep values within [Q1 - 1.5 * IQR, Q3 + 1.5 * IQR] for each
+	numeric column (excluding configured columns). Rows outside the interval
+	are removed.
+	"""
+
+	if not config.apply_outlier_filter:
+		return df, 0, tuple()
+
+	exclude = set(config.outlier_exclude_columns)
+	exclude.add(config.target_column)
+
+	numeric_cols = [
+		col
+		for col in df.select_dtypes(include=["number"]).columns
+		if col not in exclude
+	]
+	if not numeric_cols:
+		return df, 0, tuple()
+
+	mask = pd.Series(True, index=df.index)
+	used_cols = []
+	for col in numeric_cols:
+		q1 = df[col].quantile(0.25)
+		q3 = df[col].quantile(0.75)
+		iqr = q3 - q1
+		if pd.isna(iqr) or iqr <= 0:
+			continue
+		lower = q1 - config.outlier_iqr_multiplier * iqr
+		upper = q3 + config.outlier_iqr_multiplier * iqr
+		mask &= df[col].isna() | df[col].between(lower, upper)
+		used_cols.append(col)
+
+	removed = int((~mask).sum())
+	return df[mask].copy(), removed, tuple(used_cols)
+
+
 def clean_and_impute(df: pd.DataFrame, config: PipelineConfig) -> Tuple[pd.DataFrame, Step02Stats]:
 	"""Run cleaning, domain rules, and missing value handling.
 
@@ -233,12 +298,14 @@ def clean_and_impute(df: pd.DataFrame, config: PipelineConfig) -> Tuple[pd.DataF
 	"""
 
 	df = standardize_missing_values(df)
+	df = normalize_cs_escol_n(df)
 	df = convert_date_columns(df, config.date_columns)
 
 	df, invalid_age, invalid_birth_year, invalid_an_quant = apply_domain_rules(df, config)
 	df = map_ignored_codes(df, config)
 
 	df, numeric_filled, categorical_filled = impute_missing_values(df, config)
+	df, outliers_removed, outlier_columns = remove_outliers_iqr(df, config)
 
 	stats = Step02Stats(
 		invalid_age_count=invalid_age,
@@ -246,5 +313,7 @@ def clean_and_impute(df: pd.DataFrame, config: PipelineConfig) -> Tuple[pd.DataF
 		invalid_an_quant_count=invalid_an_quant,
 		numeric_imputed_values=numeric_filled,
 		categorical_imputed_values=categorical_filled,
+		outliers_removed=outliers_removed,
+		outlier_columns=outlier_columns,
 	)
 	return df, stats

@@ -58,6 +58,7 @@ IGNORED_CODE_VALUES: Tuple[str, ...] = (
 	"99",
 	"999",
 	"9999",
+	""
 	"Ignorado",
 	"IGNORADO",
 )
@@ -77,7 +78,7 @@ DROP_AFTER_FEATURES: Tuple[str, ...] = (
 	"OUTROS",
 	"SG_UF_NOT",
 	"ID_PAIS",
-	"DT_NOTIFIC",
+	#"DT_NOTIFIC", #comentei para gerar  data/processed/sinan_esq_processed_with_dt_notific.parquet
 	"DT_SIN_PRI",
 	"DT_INVEST",
 	"DT_ENCERRA",
@@ -92,6 +93,17 @@ DROP_AFTER_FEATURES: Tuple[str, ...] = (
 	"AN_QUANT",
 	"TPAUTOCTO",
 	"COPAISINF",
+)
+
+# é a lista de colunas que não entram no filtro de outliers por IQR pois são identificadores
+OUTLIER_EXCLUDE_COLUMNS: Tuple[str, ...] = (
+	"ID_MUNICIP",
+	"ID_UNIDADE",
+)
+
+POST_FEATURE_OUTLIER_COLUMNS: Tuple[str, ...] = (
+	"delay_notificacao_dias",
+	"tempo_encerramento_dias",
 )
 
 
@@ -115,6 +127,10 @@ class PipelineConfig:
 		ignored_code_values: Values representing ignored/missing codes.
 		drop_after_features: Columns removed after feature engineering.
 		apply_drop_after_features: Whether to drop columns after features.
+		apply_outlier_filter: Whether to remove outliers using IQR.
+		outlier_iqr_multiplier: IQR multiplier for outlier bounds.
+		outlier_exclude_columns: Columns excluded from outlier filtering.
+		post_feature_outlier_columns: Columns filtered by IQR after features.
 		age_min: Minimum plausible age in years.
 		age_max: Maximum plausible age in years.
 		birth_year_min: Minimum plausible birth year.
@@ -140,6 +156,10 @@ class PipelineConfig:
 
 	drop_after_features: Tuple[str, ...] = DROP_AFTER_FEATURES
 	apply_drop_after_features: bool = True
+	apply_outlier_filter: bool = True
+	outlier_iqr_multiplier: float = 1.5
+	outlier_exclude_columns: Tuple[str, ...] = OUTLIER_EXCLUDE_COLUMNS
+	post_feature_outlier_columns: Tuple[str, ...] = POST_FEATURE_OUTLIER_COLUMNS
 
 	age_min: int = 0
 	age_max: int = 130

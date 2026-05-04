@@ -16,7 +16,7 @@
 | **CS_SEXO** | Sexo | M- Masculino, F- Feminino, I- Ignorado | |
 | **CS_GESTANT** | Gestante | 1-1°Trimestre, 2-2°Trimestre, 3-3°Trimestre, 4-Idade gestacional Ignorada, 5-Não, 6-Não se aplica, 9-Ignorado | |
 | **CS_RACA** | Raça/Cor | 1-Branca, 2-Preta, 3-Amarela, 4-Parda, 5-Indígena, 9-Ignorado | |
-| **CS_ESCOL_N** | Escolaridade | 0-Analfabeto a 10-Não se aplica | |
+| **CS_ESCOL_N** | Escolaridade | 0-Analfabeto, 1-1ª a 4ª série incompleta do EF, 2-4ª série completa do EF, 3-5ª à 8ª série incompleta do EF, 4-Ensino fundamental completo, 5-Ensino médio incompleto, 6-Ensino médio completo, 7-Educação superior incompleta, 8-Educação superior completa, 9-Ignorado, 10-Não se aplica | |
 | **SG_UF** | UF de Residência | | |
 | **ID_MN_RESI** | Município de Residência | | |
 | **ID_RG_RESI** | | | |

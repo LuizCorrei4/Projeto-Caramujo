@@ -57,12 +57,18 @@ def _print_step02(stats) -> None:
 	print(f"AN_QUANT negativo ajustado: {stats.invalid_an_quant_count}")
 	print(f"Valores imputados (numericos): {stats.numeric_imputed_values}")
 	print(f"Valores imputados (categoricos): {stats.categorical_imputed_values}")
+	print(f"Outliers removidos (IQR): {stats.outliers_removed}")
+	if stats.outlier_columns:
+		print(f"Colunas usadas no IQR: {list(stats.outlier_columns)}")
 
 
 def _print_step03(stats) -> None:
 	print("\n[Step 03] Feature engineering")
 	print(f"Features criadas: {list(stats.created_features)}")
 	print(f"Colunas removidas apos features: {len(stats.dropped_after_features)}")
+	print(f"Outliers removidos (IQR pos-features): {stats.outliers_removed}")
+	if stats.outlier_columns:
+		print(f"Colunas IQR pos-features: {list(stats.outlier_columns)}")
 
 
 def _print_step04(stats) -> None:
