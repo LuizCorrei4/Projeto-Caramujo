@@ -88,7 +88,6 @@ DROP_AFTER_FEATURES: Tuple[str, ...] = (
 	"COMUNINF",
 	"OUTROS",
 	"ID_PAIS",
-	"DT_NOTIFIC", #comentar para gerar  data/processed/sinan_esq_processed_with_dt_notific.parquet
 	"DT_SIN_PRI",
 	"DT_INVEST",
 	"DT_ENCERRA",
