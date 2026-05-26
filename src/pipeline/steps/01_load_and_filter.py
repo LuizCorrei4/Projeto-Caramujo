@@ -16,7 +16,7 @@ class Step01Stats:
 	"""Metrics collected during load and filter."""
 
 	rows_initial: int
-	rows_after_positive_filter: int
+	rows_after_cohort_selection: int
 	rows_after_target_filter: int
 	rows_after_target_drop: int
 	dropped_immediate_columns: Tuple[str, ...]
@@ -68,6 +68,24 @@ def filter_positive_cases(df: pd.DataFrame, config: PipelineConfig) -> pd.DataFr
 	df = df.copy()
 	df[col] = _normalize_string_series(df[col])
 	return df[df[col] == config.positive_filter_value].copy()
+
+
+def drop_cohort_values(df: pd.DataFrame, config: PipelineConfig) -> pd.DataFrame:
+	"""Drop rows that match the configured cohort exclusion values."""
+
+	if not config.cohort_drop_columns or not config.cohort_drop_values:
+		return df
+
+	mask = pd.Series(False, index=df.index)
+	for col in config.cohort_drop_columns:
+		if col not in df.columns:
+			continue
+		normalized = _normalize_string_series(df[col])
+		mask |= normalized.isin(config.cohort_drop_values)
+
+	if not mask.any():
+		return df
+	return df[~mask].copy()
 
 
 def clean_target_column(df: pd.DataFrame, config: PipelineConfig) -> pd.DataFrame:
@@ -135,7 +153,8 @@ def load_and_filter(config: PipelineConfig) -> Tuple[pd.DataFrame, Step01Stats]:
 	rows_initial = len(df_raw)
 
 	df = filter_positive_cases(df_raw, config)
-	rows_after_positive = len(df)
+	df = drop_cohort_values(df, config)
+	rows_after_cohort = len(df)
 
 	if config.apply_target_filter:
 		df = clean_target_column(df, config)
@@ -148,11 +167,11 @@ def load_and_filter(config: PipelineConfig) -> Tuple[pd.DataFrame, Step01Stats]:
 		rows_after_target = len(df)
 		rows_after_target_drop = len(df)
 
-	df, dropped_cols = drop_immediate_columns(df, config.immediate_drop_columns)
+	df, dropped_cols = drop_immediate_columns(df, config.resolved_immediate_drop_columns())
 
 	stats = Step01Stats(
 		rows_initial=rows_initial,
-		rows_after_positive_filter=rows_after_positive,
+		rows_after_cohort_selection=rows_after_cohort,
 		rows_after_target_filter=rows_after_target,
 		rows_after_target_drop=rows_after_target_drop,
 		dropped_immediate_columns=dropped_cols,

@@ -22,9 +22,11 @@ venv/
 .idea/
 .vscode/
 
-# Data (manter apenas o raw)
-# data/*
-# !data/sinan_esqu_raw.parquet
+# 1. Ignora todo o conteúdo dentro da pasta data
+data/*
+
+# 2. Cria uma exceção (usando !) para a pasta raw e seu conteúdo
+!data/raw/
 
 # Logs
 *.log

@@ -33,7 +33,7 @@ def _load_step_module(file_name: str, module_name: str):
 def _print_step01(stats) -> None:
 	print("\n[Step 01] Load and filter")
 	print(f"Registros iniciais: {stats.rows_initial:,}")
-	print(f"Apos filtro positivo: {stats.rows_after_positive_filter:,}")
+	print(f"Apos selecao da coorte: {stats.rows_after_cohort_selection:,}")
 	print(f"Apos filtro alvo valido: {stats.rows_after_target_filter:,}")
 	print(f"Apos remover valores do alvo: {stats.rows_after_target_drop:,}")
 	print(f"Colunas descartadas (imediato): {len(stats.dropped_immediate_columns)}")
@@ -120,6 +120,13 @@ def _parse_args() -> argparse.Namespace:
 	default_config = PipelineConfig()
 	parser = argparse.ArgumentParser(description="Pipeline de preprocessamento SINAN ESQU")
 	parser.add_argument(
+		"--cohort-profile",
+		type=str,
+		choices=("supervised", "unsupervised-ml"),
+		default="supervised",
+		help="Perfil da coorte de saida (supervised ou unsupervised-ml)",
+	)
+	parser.add_argument(
 		"--input",
 		type=str,
 		default=str(default_config.input_path),
@@ -128,8 +135,8 @@ def _parse_args() -> argparse.Namespace:
 	parser.add_argument(
 		"--output",
 		type=str,
-		default=str(default_config.output_path),
-		help="Caminho do parquet processado",
+		default=None,
+		help="Caminho do parquet processado. Se omitido, usa o padrao do perfil escolhido.",
 	)
 	parser.add_argument(
 		"--download-raw",
@@ -165,6 +172,13 @@ def _parse_args() -> argparse.Namespace:
 		help="Desativa descarte apos feature engineering",
 	)
 	parser.add_argument(
+		"--drop-profile",
+		type=str,
+		choices=("full", "immediate-only"),
+		default="full",
+		help="Preset de descarte de colunas (full ou immediate-only)",
+	)
+	parser.add_argument(
 		"--no-target-filter",
 		action="store_true",
 		help="Desativa filtro baseado no alvo",
@@ -173,15 +187,40 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _config_from_args(args: argparse.Namespace) -> PipelineConfig:
-	return PipelineConfig(
+	output_path = (
+		Path(args.output)
+		if args.output is not None
+		else (
+			PipelineConfig.unsupervised_ml().output_path
+			if args.cohort_profile == "unsupervised-ml"
+			else default_config.output_path
+		)
+	)
+
+	if args.cohort_profile == "unsupervised-ml":
+		config_kwargs = dict(
+			input_path=Path(args.input),
+			output_path=output_path,
+		)
+		config = PipelineConfig.unsupervised_ml(**config_kwargs)
+		config.apply_drop_after_features = not args.no_drop_after_features
+		if args.drop_profile == "immediate-only":
+			config.apply_drop_after_features = False
+			config.drop_after_features = tuple()
+		return config
+
+	config_kwargs = dict(
 		input_path=Path(args.input),
-		output_path=Path(args.output),
+		output_path=output_path,
 		apply_positive_filter=not args.no_positive_filter,
 		positive_filter_column=args.positive_column,
 		positive_filter_value=args.positive_value,
 		apply_drop_after_features=not args.no_drop_after_features,
 		apply_target_filter=not args.no_target_filter,
 	)
+	if args.drop_profile == "immediate-only":
+		return PipelineConfig.immediate_only(**config_kwargs)
+	return PipelineConfig(**config_kwargs)
 
 
 if __name__ == "__main__":

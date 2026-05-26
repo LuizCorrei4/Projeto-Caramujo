@@ -3,7 +3,7 @@ Descarte Imediato
 
 -- Constantes --
 TP_NOT - Motivo: É uma constante (todos os dados são do tipo 2)
-ID_AGRAVP - Motivo: É uma constante (todos os dados têm o ID B659)
+ID_AGRAVO - Motivo: É uma constante (todos os dados têm o ID B659)
 
 --- Fluxo/Sistema ---
 DT_DIGITA - Motivo: Data de digitação da ficha não é importante

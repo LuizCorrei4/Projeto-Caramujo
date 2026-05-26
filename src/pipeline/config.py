@@ -9,7 +9,6 @@ from typing import Tuple
 
 IMMEDIATE_DROP_COLUMNS: Tuple[str, ...] = (
 	"TP_NOT",
-	"ID_AGRAVO",
 	"ID_AGRAVP",
 	"DT_DIGITA",
 	"DT_TRANSUS",
@@ -21,6 +20,18 @@ IMMEDIATE_DROP_COLUMNS: Tuple[str, ...] = (
 	"NOCOLINF",
 	"DS_FORMA",
 	"OUTRO_EX",
+)
+
+IMMEDIATE_DROP_COLUMN_ALIASES = {
+	"ID_AGRAVP": "ID_AGRAVP",
+}
+
+UNSUPERVISED_COHORT_DROP_COLUMNS: Tuple[str, ...] = (
+	"AN_QUALI",
+)
+
+UNSUPERVISED_COHORT_DROP_VALUES: Tuple[str, ...] = (
+	"2",
 )
 
 DATE_COLUMNS: Tuple[str, ...] = (
@@ -76,7 +87,6 @@ DROP_AFTER_FEATURES: Tuple[str, ...] = (
 	"ID_OCUPA_N",
 	"COMUNINF",
 	"OUTROS",
-	"SG_UF_NOT",
 	"ID_PAIS",
 	"DT_NOTIFIC", #comentar para gerar  data/processed/sinan_esq_processed_with_dt_notific.parquet
 	"DT_SIN_PRI",
@@ -117,6 +127,8 @@ class PipelineConfig:
 		apply_positive_filter: Whether to keep only positive cases.
 		positive_filter_column: Column used for the positive case filter.
 		positive_filter_value: Value that identifies a positive case.
+		cohort_drop_columns: Columns where selected values will be removed.
+		cohort_drop_values: Values removed from the configured cohort columns.
 		apply_target_filter: Whether to apply target-based filters.
 		target_column: Target column for supervised modeling.
 		target_invalid_values: Values to be treated as missing in target.
@@ -137,12 +149,14 @@ class PipelineConfig:
 		impute_exclude_columns: Extra columns excluded from imputation.
 	"""
 
-	input_path: Path = Path("data/sinan_esqu_raw.parquet")
+	input_path: Path = Path("data/raw/sinan_esqu_raw.parquet")
 	output_path: Path = Path("data/processed/sinan_esqu_processed.parquet")
 
 	apply_positive_filter: bool = True
 	positive_filter_column: str = "AN_QUALI"
 	positive_filter_value: str = "1"
+	cohort_drop_columns: Tuple[str, ...] = ()
+	cohort_drop_values: Tuple[str, ...] = ()
 	apply_target_filter: bool = True
 
 	target_column: str = "EVOLUCAO"
@@ -175,3 +189,37 @@ class PipelineConfig:
 			ordered.append(self.target_column)
 		ordered.extend(self.date_columns)
 		return tuple(dict.fromkeys(ordered))
+
+	def resolved_immediate_drop_columns(self) -> Tuple[str, ...]:
+		"""Return the immediate-drop columns normalized to raw field names."""
+
+		resolved = [
+			IMMEDIATE_DROP_COLUMN_ALIASES.get(column, column)
+			for column in self.immediate_drop_columns
+		]
+		return tuple(dict.fromkeys(resolved))
+
+	@classmethod
+	def unsupervised_ml(cls, **kwargs: object) -> "PipelineConfig":
+		"""Create a config for the non-supervised ML cohort."""
+
+		config_kwargs = dict(kwargs)
+		config_kwargs.setdefault(
+			"output_path",
+			Path("data/processed/sinan_esqu_unsup.parquet"),
+		)
+		config_kwargs["apply_positive_filter"] = False
+		config_kwargs["cohort_drop_columns"] = UNSUPERVISED_COHORT_DROP_COLUMNS
+		config_kwargs["cohort_drop_values"] = UNSUPERVISED_COHORT_DROP_VALUES
+		config_kwargs["apply_target_filter"] = False
+		config_kwargs["impute_exclude_columns"] = ("EVOLUCAO", "AN_QUALI")
+		return cls(**config_kwargs)
+
+	@classmethod
+	def immediate_only(cls, **kwargs: object) -> "PipelineConfig":
+		"""Create a config that keeps only the immediate discard stage."""
+
+		config_kwargs = dict(kwargs)
+		config_kwargs["apply_drop_after_features"] = False
+		config_kwargs["drop_after_features"] = tuple()
+		return cls(**config_kwargs)
