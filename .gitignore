@@ -30,3 +30,6 @@ data/*
 
 # Logs
 *.log
+
+#pasta imagens
+imagens/*
