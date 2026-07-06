@@ -26,7 +26,7 @@ Para que você (Agente IA do Ítalo) consiga refinar os modelos, adicionar lógi
 1. `contexto/contexto_repositorio.md`: **A Bíblia do Projeto.** Detalha como as variáveis do MapBiomas foram transformadas (a lógica por trás da variável `açudes_canais_ha`), o fluxo do K-Means e do Random Forest, e as escolhas de mitigação de desbalanceamento.
 2. `contexto/plano_aplicacao_streamlit.md`: O planejamento estrutural arquitetônico do Streamlit.
 3. `anotacoes/dicionario.md`: Contém a chave de decodificação das variáveis brutas da base do SINAN.
-4. (Opcional para aprofundamento): `notebooks/analise_geoespacial/analise_saneamento_corpos_d'agua.ipynb`.
+4. obrigatorio para aprofundamento: `notebooks/analise_geoespacial/analise_saneamento_corpos_d'agua.ipynb`.
 
 ---
 

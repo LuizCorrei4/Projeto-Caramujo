@@ -20,7 +20,7 @@ Navegue pelas opções no menu lateral para acessar os módulos analíticos:
 
 1. **Painel Epidemiológico:** Explore o histórico descritivo de casos notificados, avalie a progressão cronológica da incidência da doença e entenda o perfil demográfico (idade, sexo, escolaridade) das populações mais afetadas.
 2. **Mapeamento e Perfis:** Visualize a disposição geográfica dos polos de risco e o mapeamento dos 5 Perfis de Vulnerabilidade descobertos pelo nosso modelo estatístico não-supervisionado (K-Means). Esta página evidencia como o fornecimento nominal de saneamento não assegura o controle da doença em ambientes de forte exploração hídrica.
-3. **Simulador de Risco:** Acesse a interface preventiva impulsionada por algoritmos de Florestas Aleatórias (Random Forest). Este motor permite a simulação da realidade de um município, avaliando seu potencial de se transformar em um núcleo epidêmico a partir exclusivamente de fatores físicos e infraestruturais.
+3. **Aplicação Temporal do Modelo:** Veja o modelo preditivo (Random Forest) em ação. Treinado sobre a base histórica de 2011–2014 exclusivamente com fatores físicos e infraestruturais, ele é aplicado "às cegas" nos horizontes de 2015–2019 e 2020–2025, revelando os focos de alto risco confirmados e, sobretudo, os **focos emergentes** — municípios que carregam a assinatura ambiental de risco e são candidatos a se tornarem os próximos epicentros.
 
 ---
 
