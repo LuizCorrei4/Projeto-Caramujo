@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import sys
 from pathlib import Path
@@ -10,7 +9,6 @@ from utils.data_loader import (
     load_features_2011_2014,
     load_features_2015_2019,
     load_features_2020_2025,
-    load_coord_lookup,
 )
 from utils.model_trainer import train_reference_model, apply_model_to_period
 
@@ -103,68 +101,6 @@ else:
 st.divider()
 
 # ---------------------------------------------------------------------------
-# Mapa geográfico das situações
-# ---------------------------------------------------------------------------
-st.header("Mapa de Vigilância Ativa")
-st.markdown(
-    "Cada ponto é um município. Destacamos os **confirmados**, os **focos emergentes** (alertas preventivos) e "
-    "os eventuais **não detectados**. Use a legenda para isolar categorias."
-)
-
-coord = load_coord_lookup()
-df["code_muni"] = df["code_muni"].astype(str).str[:6]
-df_map = df.merge(coord, on="code_muni", how="left")
-
-# Foco visual: mostramos por padrão apenas os municípios relevantes (não o "Baixo risco")
-categorias_destaque = [
-    "Alto risco confirmado",
-    "Foco emergente (alerta preventivo)",
-    "Alto risco não detectado",
-]
-df_destaque = df_map[df_map["situacao"].isin(categorias_destaque)].dropna(subset=["lat", "lon"])
-
-mostrar_baixo = st.checkbox("Exibir também municípios de baixo risco no mapa", value=False)
-if mostrar_baixo:
-    df_plot = df_map.dropna(subset=["lat", "lon"])
-else:
-    df_plot = df_destaque
-
-cores = {
-    "Alto risco confirmado": "#d62728",
-    "Foco emergente (alerta preventivo)": "#ff7f0e",
-    "Alto risco não detectado": "#9467bd",
-    "Baixo risco": "#3ca0a0",
-}
-
-if df_plot.empty:
-    st.info("Sem coordenadas disponíveis para os municípios desta categoria.")
-else:
-    fig_map = px.scatter_mapbox(
-        df_plot,
-        lat="lat",
-        lon="lon",
-        color="situacao",
-        size="prob_alto_risco",
-        size_max=18,
-        hover_name="municipality",
-        hover_data={"state": True, "inc_media_100k": ":.1f", "prob_alto_risco": ":.1%", "lat": False, "lon": False},
-        color_discrete_map=cores,
-        category_orders={"situacao": categorias_destaque + ["Baixo risco"]},
-        zoom=3.3,
-        center={"lat": -15.0, "lon": -50.0},
-        mapbox_style="carto-positron",
-        labels={"situacao": "Situação"},
-    )
-    fig_map.update_layout(
-        margin={"r": 0, "t": 10, "l": 0, "b": 0},
-        legend=dict(orientation="h", yanchor="bottom", y=0.0, bgcolor="rgba(255,255,255,0.6)"),
-        height=560,
-    )
-    st.plotly_chart(fig_map, use_container_width=True)
-
-st.divider()
-
-# ---------------------------------------------------------------------------
 # Matriz de confusão + tabela de focos emergentes
 # ---------------------------------------------------------------------------
 col_cm, col_tab = st.columns([4, 6])
@@ -198,24 +134,22 @@ with col_cm:
 with col_tab:
     st.subheader("🟠 Focos emergentes — candidatos a próximos epicentros")
     st.caption(
-        "Municípios que o modelo classificou como alto risco e que **ainda não** eram epicentros no período. "
-        "Ordenados pela confiança do alerta."
+        "Municípios que o modelo classificou como alto risco e que **ainda não** eram epicentros no período — "
+        "ordenados pela extensão de açudes/canais, o principal fator ambiental de risco."
     )
     df_fp = df[df["situacao"] == "Foco emergente (alerta preventivo)"].copy()
     df_fp = df_fp[[
-        "municipality", "state", "prob_alto_risco", "inc_media_100k", "taxa_esgoto_media", "açudes_canais_ha"
+        "municipality", "state", "inc_media_100k", "taxa_esgoto_media", "açudes_canais_ha"
     ]].rename(columns={
         "municipality": "Município",
         "state": "Estado",
-        "prob_alto_risco": "Confiança do alerta",
         "inc_media_100k": "Incidência (100k)",
         "taxa_esgoto_media": "Esgoto (%)",
         "açudes_canais_ha": "Açudes/Canais (ha)",
-    }).sort_values("Confiança do alerta", ascending=False)
+    }).sort_values("Açudes/Canais (ha)", ascending=False)
 
     st.dataframe(
         df_fp.style.format({
-            "Confiança do alerta": "{:.1%}",
             "Incidência (100k)": "{:.1f}",
             "Esgoto (%)": "{:.1f}",
             "Açudes/Canais (ha)": "{:.1f}",

@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 # Colunas que alimentam cada etapa (idênticas ao notebook de modelagem)
 FEATURES_CLUSTER = ["inc_media_100k", "açudes_canais_ha", "taxa_esgoto_media", "pop_media"]
@@ -75,14 +76,22 @@ def train_reference_model(df_train):
     nomes_clusters = _rotular_clusters(df)
     df["perfil_nome"] = df["perfil_cluster"].map(nomes_clusters)
 
-    # 4. Base balanceada para o Random Forest (Undersampling 1:2)
-    alto_risco = df[df["alvo_alto_risco"] == 1]
-    baixo_risco = df[df["alvo_alto_risco"] == 0]
-    n_amostras = min(len(alto_risco) * 2, len(baixo_risco))
-    baixo_risco_reduzido = baixo_risco.sample(n=n_amostras, random_state=42)
+    # 4. Split treino/teste (70/30, estratificado) ANTES do balanceamento —
+    #    reprodução fiel do notebook 'analise_saneamento_corpos_d'agua.ipynb'.
+    X = df[FEATURES_RF]
+    y = df["alvo_alto_risco"]
+    X_train, _, y_train, _ = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+
+    # 5. Undersampling 1:2 aplicado SOMENTE na base de treino
+    treino = pd.concat([X_train, y_train], axis=1)
+    alto_risco = treino[treino["alvo_alto_risco"] == 1]
+    baixo_risco = treino[treino["alvo_alto_risco"] == 0]
+    baixo_risco_reduzido = baixo_risco.sample(n=len(alto_risco) * 2, random_state=42)
     df_balanceado = pd.concat([alto_risco, baixo_risco_reduzido])
 
-    # 5. Random Forest treinado SEM variáveis clínicas (só ambiente + saneamento)
+    # 6. Random Forest treinado SEM variáveis clínicas (só ambiente + saneamento)
     rf = RandomForestClassifier(random_state=42, n_estimators=100)
     rf.fit(df_balanceado[FEATURES_RF], df_balanceado["alvo_alto_risco"])
 

@@ -1,13 +1,12 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from sklearn.decomposition import PCA
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from utils.data_loader import load_features_2011_2014, load_geo_data
-from utils.model_trainer import train_reference_model, FEATURES_CLUSTER
+from utils.model_trainer import train_reference_model
 
 st.set_page_config(page_title="Mapeamento e Perfis", layout="wide")
 
@@ -127,59 +126,43 @@ for perfil in ordem_perfis:
 
 st.divider()
 
-st.header("3. Como os grupos se separam no espaço matemático (PCA)")
+st.header("3. Análise das Distribuições por Perfil")
 st.markdown("""
-As variáveis usadas no agrupamento vivem em 4 dimensões, impossíveis de desenhar. A técnica de **Análise de
-Componentes Principais (PCA)** comprime essas dimensões em um plano 2D preservando o máximo de variação possível,
-permitindo *ver* como os perfis se organizam e se separam.
+Os boxplots abaixo mostram como cada variável se distribui **dentro de cada perfil**, revelando o que
+matematicamente distingue um grupo do outro. A caixa concentra os 50% centrais dos municípios (do 1º ao 3º
+quartil), a linha interna é a mediana e os pontos isolados são valores extremos. Escala logarítmica é usada
+onde a amplitude é muito grande.
 """)
 
-col_pca, col_box = st.columns([5, 5])
+variaveis_box = [
+    ("inc_media_100k", "Incidência por 100 mil habitantes", True),
+    ("taxa_esgoto_media", "Taxa de Coleta de Esgoto (%)", False),
+    ("açudes_canais_ha", "Área de Açudes e Canais (ha)", True),
+    ("pop_media", "População Média", True),
+]
 
-with col_pca:
-    pca = PCA(n_components=2)
-    componentes = pca.fit_transform(model["scaler"].transform(df_ml[FEATURES_CLUSTER]))
-    df_pca = df_ml.copy()
-    df_pca["Componente 1"] = componentes[:, 0]
-    df_pca["Componente 2"] = componentes[:, 1]
-    var_exp = pca.explained_variance_ratio_.sum() * 100
-
-    fig_pca = px.scatter(
-        df_pca,
-        x="Componente 1",
-        y="Componente 2",
-        color="perfil_nome",
-        hover_name="municipality",
-        hover_data=["state", "inc_media_100k"],
-        title=f"Mapa dos Perfis no Espaço PCA ({var_exp:.0f}% da variação preservada)",
-        labels={"perfil_nome": "Perfil de Risco"},
-    )
-    fig_pca.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.5))
-    st.plotly_chart(fig_pca, use_container_width=True)
-
-with col_box:
-    fig_box_agua = px.box(
-        df_ml,
-        x="perfil_nome",
-        y="açudes_canais_ha",
-        color="perfil_nome",
-        title="Distribuição Hídrica: Açudes e Canais (ha, escala log)",
-        log_y=True,
-        color_discrete_sequence=px.colors.qualitative.Bold,
-    )
-    fig_box_agua.update_layout(showlegend=False, xaxis_title="", xaxis={"showticklabels": False})
-    st.plotly_chart(fig_box_agua, use_container_width=True)
-
-    fig_box_esgoto = px.box(
-        df_ml,
-        x="perfil_nome",
-        y="taxa_esgoto_media",
-        color="perfil_nome",
-        title="Distribuição Estrutural: Coleta de Esgoto (%)",
-        color_discrete_sequence=px.colors.qualitative.Bold,
-    )
-    fig_box_esgoto.update_layout(showlegend=False, xaxis_title="", xaxis={"showticklabels": False})
-    st.plotly_chart(fig_box_esgoto, use_container_width=True)
+box_col1, box_col2 = st.columns(2)
+for idx, (coluna, titulo, log) in enumerate(variaveis_box):
+    destino = box_col1 if idx % 2 == 0 else box_col2
+    with destino:
+        fig_box = px.box(
+            df_ml,
+            x="perfil_nome",
+            y=coluna,
+            color="perfil_nome",
+            title=titulo,
+            log_y=log,
+            category_orders={"perfil_nome": ordem_perfis},
+            color_discrete_sequence=px.colors.qualitative.Bold,
+        )
+        fig_box.update_layout(
+            showlegend=False,
+            xaxis_title="",
+            yaxis_title="",
+            xaxis={"tickangle": -25},
+            margin={"t": 40},
+        )
+        st.plotly_chart(fig_box, use_container_width=True)
 
 st.divider()
 
