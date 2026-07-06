@@ -20,9 +20,21 @@ if df.empty:
     st.error("Não foi possível carregar a base de dados epidemiológica (SINAN). Verifique a disponibilidade dos arquivos processados.")
     st.stop()
 
+# Dicionários de mapeamento semântico
+MAPA_UF = {
+    '11': 'RO', '12': 'AC', '13': 'AM', '14': 'RR', '15': 'PA', '16': 'AP', '17': 'TO',
+    '21': 'MA', '22': 'PI', '23': 'CE', '24': 'RN', '25': 'PB', '26': 'PE', '27': 'AL', '28': 'SE', '29': 'BA',
+    '31': 'MG', '32': 'ES', '33': 'RJ', '35': 'SP',
+    '41': 'PR', '42': 'SC', '43': 'RS',
+    '50': 'MS', '51': 'MT', '52': 'GO', '53': 'DF'
+}
+
+# Se a UF já estiver em texto, mantém o texto. Se for código, mapeia.
+df['UF_NOME'] = df['SG_UF'].astype(str).map(lambda x: MAPA_UF.get(x, x))
+
 # Filtros laterais
 st.sidebar.header("Filtros de Análise")
-estados_disponiveis = df['SG_UF'].dropna().unique().tolist()
+estados_disponiveis = df['UF_NOME'].dropna().unique().tolist()
 estados_selecionados = st.sidebar.multiselect("Filtrar por Estado (UF):", options=sorted(estados_disponiveis), default=[])
 
 anos_disponiveis = df['ano'].dropna().unique()
@@ -32,7 +44,7 @@ ano_selecionado = st.sidebar.slider("Período de Análise (Anos):", ano_min, ano
 # Aplicando os filtros ao dataframe
 df_filtrado = df[(df['ano'] >= ano_selecionado[0]) & (df['ano'] <= ano_selecionado[1])]
 if estados_selecionados:
-    df_filtrado = df_filtrado[df_filtrado['SG_UF'].isin(estados_selecionados)]
+    df_filtrado = df_filtrado[df_filtrado['UF_NOME'].isin(estados_selecionados)]
 
 # Seção de Métricas Principais (KPIs)
 st.subheader("Visão Geral do Período Selecionado")
@@ -72,10 +84,16 @@ with col_esq:
     
     st.subheader("Nível de Escolaridade")
     if 'CS_ESCOL_N' in df_filtrado.columns:
-        escol = df_filtrado['CS_ESCOL_N'].value_counts().reset_index()
-        escol.columns = ['Escolaridade (Código)', 'Casos']
+        mapa_escolaridade = {
+            '0': 'Analfabeto', '1': '1ª a 4ª série incomp.', '2': '4ª série comp.', 
+            '3': '5ª à 8ª série incomp.', '4': 'Ensino fund. comp.', '5': 'Ensino médio incomp.', 
+            '6': 'Ensino médio comp.', '7': 'Ed. superior incomp.', '8': 'Ed. superior comp.', 
+            '9': 'Ignorado', '10': 'Não se aplica'
+        }
+        escol = df_filtrado['CS_ESCOL_N'].astype(str).map(lambda x: mapa_escolaridade.get(x, "Outros/Ignorado")).value_counts().reset_index()
+        escol.columns = ['Escolaridade', 'Casos']
         fig_escol = px.bar(
-            escol, x='Escolaridade (Código)', y='Casos', 
+            escol, x='Escolaridade', y='Casos', 
             color_discrete_sequence=["#2ca02c"]
         )
         st.plotly_chart(fig_escol, use_container_width=True)
@@ -93,10 +111,13 @@ with col_dir:
         
     st.subheader("Composição Racial das Notificações")
     if 'CS_RACA' in df_filtrado.columns:
-        raca = df_filtrado['CS_RACA'].value_counts().reset_index()
-        raca.columns = ['Raça (Código)', 'Casos']
+        mapa_raca = {
+            '1': 'Branca', '2': 'Preta', '3': 'Amarela', '4': 'Parda', '5': 'Indígena', '9': 'Ignorado'
+        }
+        raca = df_filtrado['CS_RACA'].astype(str).map(lambda x: mapa_raca.get(x, "Ignorado")).value_counts().reset_index()
+        raca.columns = ['Raça/Cor', 'Casos']
         fig_raca = px.pie(
-            raca, values='Casos', names='Raça (Código)', 
+            raca, values='Casos', names='Raça/Cor', 
             color_discrete_sequence=px.colors.sequential.RdBu
         )
         st.plotly_chart(fig_raca, use_container_width=True)

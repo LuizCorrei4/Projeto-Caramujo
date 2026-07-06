@@ -28,8 +28,15 @@ if df_ml is None or df_ml.empty:
     st.error("Falha ao processar a base de dados socioambiental (MapBiomas/SNIS/IBGE).")
     st.stop()
 
-# Converte o código numérico do grupo para string visando melhor plotagem categórica
-df_ml["perfil_cluster"] = "Perfil " + df_ml["perfil_cluster"].astype(str)
+# Mapeamento semântico dos Clusters conforme achados do notebook de modelagem
+mapa_clusters = {
+    '0': 'Centros Urbanos Intermediários',
+    '1': 'Cinturão de Vulnerabilidade',
+    '2': 'Epicentros da Doença (Alto Risco)',
+    '3': 'Grandes Metrópoles',
+    '4': 'Centros com Grandes Represas'
+}
+df_ml["perfil_cluster"] = df_ml["perfil_cluster"].astype(str).map(mapa_clusters)
 
 st.header("1. O Paradoxo do Saneamento na Prática")
 
@@ -41,34 +48,43 @@ with col1:
         x="taxa_esgoto_media",
         y="inc_media_100k",
         size="pop_media",
-        color="perfil_cluster",
         hover_name="municipality",
-        hover_data=["state", "açudes_canais_ha"],
+        hover_data=["state", "açudes_canais_ha", "perfil_cluster"],
         log_y=True,
         title="Avaliação Direta: Esgoto vs. Incidência de Contaminação",
         labels={
             "taxa_esgoto_media": "Taxa de Esgoto Nominal (%)",
-            "inc_media_100k": "Incidência Média (Escala Log)",
-            "perfil_cluster": "Perfil de Agrupamento"
+            "inc_media_100k": "Incidência Média (Escala Log)"
         },
-        color_discrete_sequence=px.colors.qualitative.Bold
+        color_discrete_sequence=["#1f77b4"]
     )
     st.plotly_chart(fig_disp, use_container_width=True)
 
 with col2:
     st.markdown("""
-    **Interpretação do Gráfico:**
+    **Interpretação do Gráfico (Ausência de Correlação Linear):**
+    
+    A premissa clássica de saúde pública sugere que o aumento da rede de esgoto deveria reduzir linearmente as doenças de veiculação hídrica. No entanto, o gráfico ao lado prova matematicamente que **não há correlação linear forte** entre saneamento básico isolado e incidência de contaminação para a esquistossomose.
     
     - Observe como certos municípios avançam substancialmente no eixo horizontal (possuem 60%, 70% ou 80% de saneamento básico declarado).
-    - Entretanto, ao invés de sua incidência (eixo vertical) despencar, eles se mantêm no ápice dos índices de contaminação.
+    - Entretanto, ao invés de sua incidência (eixo vertical) despencar, eles se mantêm no ápice absoluto de contaminação.
     
-    A resposta estatística se encontra nos perfis marcados. Quando investigamos o "Perfil de Alto Risco" (Epicentros), nota-se que a falha reside nos dados não-convencionais. O cruzamento espacial identificou que é a presença densa de **açudes e canais** que sequestra os benefícios da infraestrutura local.
+    Este é o **Paradoxo do Saneamento**: o cruzamento espacial identificou que é a presença densa de **pequenos açudes e canais antrópicos** (onde há forte contato humano) que neutraliza os benefícios da infraestrutura local, sequestrando as métricas tradicionais de saúde.
     """)
 
 st.divider()
 
-st.header("2. Avaliação Comparativa de Infraestrutura e Hidrografia")
-st.markdown("Distribuição matemática (Quartis e Mediana) das variáveis cruciais dentro de cada Perfil Identificado.")
+st.header("2. Avaliação Comparativa de Infraestrutura e Hidrografia (Clusters)")
+st.markdown("""
+O algoritmo K-Means agrupou os municípios em 5 perfis ecológicos e socioeconômicos distintos:
+- **Centros Urbanos Intermediários:** Municípios de médio porte com boa estrutura e baixa incidência.
+- **Cinturão de Vulnerabilidade:** Gargalos de saneamento com populações vulneráveis e presença de doença.
+- **Epicentros da Doença (Alto Risco):** Municípios pequenos onde a incidência epidemiológica extrema coexiste com fortes concentrações de águas rasas, revelando o pico do risco.
+- **Grandes Metrópoles:** Outliers demográficos onde a densidade habitacional gigantesca dilui a incidência da doença.
+- **Centros com Grandes Represas:** "Pontos cegos" de satélite; municípios com enormes lâminas d'água (hidrelétricas) que não servem como vetor por serem profundas, isolando a transmissão.
+
+Abaixo, analisamos a distribuição destas variáveis dentro de cada perfil.
+""")
 
 col_box1, col_box2 = st.columns(2)
 
