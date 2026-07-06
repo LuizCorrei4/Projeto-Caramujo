@@ -406,6 +406,14 @@ número ideal de $K=5$ grupos (\textit{clusters}). O agrupamento avaliou simulta
 incidência, população, área de açudes e taxa de esgoto, identificando automaticamente a
 assinatura do "Alto Risco".
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{cotovelo.png}
+    \caption{Gráficos de validação matemática (Cotovelo e Silhueta) para a escolha do
+    número de clusters.}
+    \label{fig:cotovelo_clusters}
+\end{figure}
+
 \subsubsection{Modelagem Preditiva (Aprendizado Supervisionado)}
 Após a clusterização, os rótulos gerados foram utilizados como alvo (\textit{target})
 para um algoritmo \textbf{Random Forest}. O modelo foi "cego" em relação aos dados de
@@ -466,13 +474,7 @@ do país:
     }
 \end{table}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{cotovelo.png}
-    \caption{Gráficos de validação matemática (Cotovelo e Silhueta) para a escolha do
-    número de clusters.}
-    \label{fig:cotovelo_clusters}
-\end{figure}
+
 
 \begin{figure}[htbp]
     \centering
@@ -541,6 +543,8 @@ latente.
     \label{fig:matriz_temporal}
 \end{figure}
 
+\newpage
+
 % ===================================================================
 \section{Fase III: Sistema Interativo de Vigilância (Streamlit)}
 % ===================================================================
@@ -607,6 +611,8 @@ demográfico (idade, sexo, escolaridade e raça/cor).
     \label{fig:st_painel}
 \end{figure}
 
+\newpage
+
 \subsubsection{Mapeamento e Perfis de Risco}
 
 A página de \textbf{Mapeamento e Perfis} (Figura~\ref{fig:st_perfis}) demonstra
@@ -643,6 +649,8 @@ de vigilância ativa.
     alertas do modelo, 202 focos emergentes e 75,3\% de acurácia global).}
     \label{fig:st_temporal}
 \end{figure}
+
+\newpage
 
 \subsubsection{Aspectos Técnicos e Execução}
 
